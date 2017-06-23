@@ -1,6 +1,6 @@
 _ = require 'underscore'
 User = require '../users/model.coffee'
-{ mongoFetch, presentCollection } = Article = require '../articles/model'
+{ where, presentCollection } = Article = require '../articles/model'
 Curation = require '../curations/model'
 Channel = require '../channels/model'
 Tag = require '../tags/model'
@@ -17,25 +17,25 @@ module.exports.articles = (root, args, req, ast) ->
       'Pass published: true to only view published articles.'
 
   return new Promise (resolve, reject) ->
-    mongoFetch args, (err, results) ->
+    where args, (err, results) ->
       resolve presentCollection(results).results
 
 module.exports.curations = (root, args, req, ast) ->
   return new Promise (resolve, reject) ->
-    Curation.mongoFetch args, (err, results) ->
+    Curation.where args, (err, results) ->
       resolve results.results
 
 module.exports.channels = (root, args, req, ast) ->
   return new Promise (resolve, reject) ->
-    Channel.mongoFetch args, (err, results) ->
+    Channel.where args, (err, results) ->
       resolve results.results
 
 module.exports.tags = (root, args, req, ast) ->
   return new Promise (resolve, reject) ->
-    Tag.mongoFetch args, (err, results) ->
+    Tag.where args, (err, results) ->
       resolve results.results
 
 module.exports.authors = (root, args, req, ast) ->
   return new Promise (resolve, reject) ->
-    Author.mongoFetch args, (err, results) ->
+    Author.where args, (err, results) ->
       resolve results.results

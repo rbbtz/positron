@@ -8,7 +8,8 @@ _s = require 'underscore.string'
 db = require '../../lib/db'
 User = require '../users/model'
 async = require 'async'
-Joi = require '../../lib/joi'
+Joi = require 'joi'
+Joi.objectId = require('joi-objectid') Joi
 moment = require 'moment'
 request = require 'superagent'
 { ObjectId } = require 'mongojs'
@@ -20,7 +21,7 @@ OPTIONS = { allowUnknown: true, stripUnknown: false }
 # Schemas
 #
 @schema = (->
-  id: @string().objectid()
+  id: @objectId()
   name: @string().allow('', null)
 ).call Joi
 
@@ -36,28 +37,25 @@ OPTIONS = { allowUnknown: true, stripUnknown: false }
   query = if ObjectId.isValid(id) then { _id: ObjectId(id) }
   db.curations.findOne query, callback
 
-@where = (input, callback) =>
+@where = (input, callback) ->
   Joi.validate input, @querySchema, (err, input) =>
     return callback err if err
-    @mongoFetch input, callback
-
-@mongoFetch = (input, callback) ->
-  query = _.omit input, 'limit', 'offset'
-  cursor = db.curations
-    .find(query)
-    .limit(input.limit)
-    .sort($natural: -1)
-    .skip(input.offset or 0)
-  async.parallel [
-    (cb) -> cursor.toArray cb
-    (cb) -> cursor.count cb
-    (cb) -> db.curations.count cb
-  ], (err, [curations, count, total]) =>
-    callback err, {
-      total: total
-      count: count
-      results: curations.map(@present)
-    }
+    query = _.omit input, 'limit', 'offset'
+    cursor = db.curations
+      .find(query)
+      .limit(input.limit)
+      .sort($natural: -1)
+      .skip(input.offset or 0)
+    async.parallel [
+      (cb) -> cursor.toArray cb
+      (cb) -> cursor.count cb
+      (cb) -> db.curations.count cb
+    ], (err, [curations, count, total]) =>
+      callback err, {
+        total: total
+        count: count
+        results: curations.map(@present)
+      }
 
 #
 # Persistence
@@ -66,7 +64,8 @@ OPTIONS = { allowUnknown: true, stripUnknown: false }
   Joi.validate input, @schema, OPTIONS, (err, input) =>
     return callback err if err
     data = _.extend _.omit(input, 'id'),
-      _id: input.id
+      _id: ObjectId(input.id)
+      # TODO: https://github.com/pebble/joi-objectid/issues/2#issuecomment-75189638
     db.curations.save data, callback
 
 @destroy = (id, callback) ->

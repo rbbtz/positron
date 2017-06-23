@@ -6,7 +6,8 @@
 _ = require 'underscore'
 db = require '../../lib/db'
 async = require 'async'
-Joi = require '../../lib/joi'
+Joi = require 'joi'
+Joi.objectId = require('joi-objectid') Joi
 { ObjectId } = require 'mongojs'
 { API_MAX, API_PAGE_SIZE } = process.env
 
@@ -14,7 +15,7 @@ Joi = require '../../lib/joi'
 # Schemas
 #
 @schema = (->
-  id: @string().objectid()
+  id: @objectId()
   name: @string().allow('', null).required()
   public: @boolean().default(false)
 ).call Joi
@@ -35,36 +36,33 @@ Joi = require '../../lib/joi'
   query = if ObjectId.isValid(id) then { _id: ObjectId(id) } else { name: id }
   db.tags.findOne query, callback
 
-@where = (input, callback) =>
+@where = (input, callback) ->
   Joi.validate input, @querySchema, (err, input) =>
     return callback err if err
-    @mongoFetch input, callback
-
-@mongoFetch = (input, callback) ->
-  query = _.omit input, 'q', 'limit', 'offset', 'count', 'strict'
-  if input.strict
-    query.name = { $eq: input.q } if input.q and input.q.length
-  else
-    query.name = { $regex: ///#{input.q}///i } if input.q and input.q.length
-  cursor = db.tags
-    .find(query)
-    .limit(input.limit)
-    .sort($natural: -1)
-    .skip(input.offset or 0)
-  async.parallel [
-    (cb) -> cursor.toArray cb
-    (cb) ->
-      return cb() unless input.count
-      cursor.count cb
-    (cb) ->
-      return cb() unless input.count
-      db.tags.count cb
-  ], (err, [tags, tagCount, total]) =>
-    callback err, {
-      total: total if input.count
-      count: tagCount if input.count
-      results: tags.map(@present)
-    }
+    query = _.omit input, 'q', 'limit', 'offset', 'count', 'strict'
+    if input.strict
+      query.name = { $eq: input.q } if input.q and input.q.length
+    else
+      query.name = { $regex: ///#{input.q}///i } if input.q and input.q.length
+    cursor = db.tags
+      .find(query)
+      .limit(input.limit)
+      .sort($natural: -1)
+      .skip(input.offset or 0)
+    async.parallel [
+      (cb) -> cursor.toArray cb
+      (cb) ->
+        return cb() unless input.count
+        cursor.count cb
+      (cb) ->
+        return cb() unless input.count
+        db.tags.count cb
+    ], (err, [tags, tagCount, total]) =>
+      callback err, {
+        total: total if input.count
+        count: tagCount if input.count
+        results: tags.map(@present)
+      }
 
 #
 # Persistence
@@ -73,7 +71,7 @@ Joi = require '../../lib/joi'
   Joi.validate input, @schema, (err, input) =>
     return callback err if err
     data = _.extend _.omit(input, 'id'),
-      _id: input.id
+      _id: ObjectId(input.id)
     db.tags.save data, callback
 
 @destroy = (id, callback) ->
