@@ -11,7 +11,13 @@
     ["module-resolver", {
       "root": ["./"]
     }],
-    "transform-class-properties"
+    "transform-class-properties",
+    ["module-alias", [
+      {
+        "src": "./node_modules/styled-components/dist/styled-components.js",
+        "expose": "styled-components"
+      }
+    ]]
   ],
   "env": {
     "development": {

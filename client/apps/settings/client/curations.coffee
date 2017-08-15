@@ -6,6 +6,8 @@ _ = require('underscore')
 React = require 'react'
 ReactDOM = require 'react-dom'
 VeniceAdmin = React.createFactory require './curations/venice_admin.coffee'
+# PromotedAdmin = React.createFactory require './curations/promoted_admin.coffee'
+PromotedAdmin = require './curations/promoted_admin.jsx'
 
 module.exports.CurationEditView = class CurationEditView extends Backbone.View
 
@@ -13,11 +15,17 @@ module.exports.CurationEditView = class CurationEditView extends Backbone.View
     'click .settings-edit-feature__section-title': 'revealSection'
 
   initialize: ->
+    # debugger
     @curation = new Curation sd.CURATION
     if @curation.get('id') is sd.EF_VENICE
       ReactDOM.render(
         VeniceAdmin(curation: @curation)
         $('#venice-root')[0]
+      )
+    else if @curation.get('type') is 'promoted-admin'
+      ReactDOM.render(
+        React.createElement(PromotedAdmin.default, { curation: @curation })
+        $('#react-root')[0]
       )
     else
       new AdminEditView

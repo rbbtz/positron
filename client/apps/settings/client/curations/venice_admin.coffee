@@ -65,7 +65,7 @@ module.exports = VeniceAdmin = React.createClass
           className: 'section-' + i
         }
         if @isActiveSection 'section-' + i
-          sectionFields {
+           {
             section: s
             id: i
             onChange: @onChangeSection
